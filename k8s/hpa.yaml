@@ -2,7 +2,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: mbti-personality-test-hpa
-  namespace: lovetest
+  namespace: lovetest-mbti
   labels:
     app: mbti-personality-test
 spec:

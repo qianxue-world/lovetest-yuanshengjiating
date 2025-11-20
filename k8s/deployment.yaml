@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mbti-personality-test
-  namespace: lovetest
+  namespace: lovetest-mbti
   labels:
     app: mbti-personality-test
     version: v1

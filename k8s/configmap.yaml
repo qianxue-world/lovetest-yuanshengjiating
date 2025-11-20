@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mbti-personality-test-config
-  namespace: lovetest
+  namespace: lovetest-mbti
   labels:
     app: mbti-personality-test
 data:
