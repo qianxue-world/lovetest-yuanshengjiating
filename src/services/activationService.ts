@@ -2,9 +2,6 @@
 
 // 从环境变量或运行时配置读取API地址
 const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && (window as any).ENV?.VITE_API_BASE_URL) {
-    return (window as any).ENV.VITE_API_BASE_URL;
-  }
   return 'https://api.lovetest.com.cn';
 };
 
