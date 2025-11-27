@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { StartScreen } from './components/StartScreen';
 import { QuestionScreen } from './components/QuestionScreen';
-import { ResultScreen } from './components/ResultScreen';
-import { PaymentModal } from './components/PaymentModal';
-import { PaymentMethodModal } from './components/PaymentMethodModal';
+import { FamilyResultScreen } from './components/FamilyResultScreen';
 import { ActivationError } from './components/ActivationError';
 import { ActivationService } from './services/activationService';
-import { Answers, PersonalityType, Trait } from './types';
+import { Answers, Dimension, TestResult } from './types';
 import './App.css';
 
 type Screen = 'start' | 'question' | 'result';
@@ -15,12 +13,14 @@ function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Answers>({
-    E: 0, I: 0, N: 0, S: 0, T: 0, F: 0, J: 0, P: 0
+    emotional: 0,
+    communication: 0,
+    boundary: 0,
+    conflict: 0,
+    security: 0,
+    growth: 0
   });
-  const [personalityType, setPersonalityType] = useState<PersonalityType>('INFP');
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showMethodModal, setShowMethodModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<{ plan: 'basic' | 'professional' | 'premium'; price: string } | null>(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   
   // 激活码验证状态
   const [isActivated, setIsActivated] = useState<boolean>(false);
@@ -30,56 +30,84 @@ function App() {
 
   const totalQuestions = 60;
 
-  // 检查是否为测试模式
+  // 检查激活码或测试模式
   useEffect(() => {
+    checkTestModeOrValidate();
+  }, []);
+
+  const checkTestModeOrValidate = async () => {
+    // 检查是否为测试模式（仅localhost）
     const urlParams = new URLSearchParams(window.location.search);
     const isTestMode = urlParams.get('test') === 'true';
-    const testType = urlParams.get('type') as PersonalityType;
-
+    
     // 安全检查：只在localhost环境下允许测试模式
     const isLocalhost = window.location.hostname === 'localhost' || 
                        window.location.hostname === '127.0.0.1' ||
                        window.location.hostname === '';
 
-    if (isTestMode && testType && isLocalhost) {
-      // 测试模式：直接跳转到结果页
-      console.log('🧪 测试模式激活:', testType);
-      setPersonalityType(testType);
+    if (isTestMode && isLocalhost) {
+      // 测试模式：从URL参数读取分数（已经是0-100的分数）
+      const dimensionScores: Answers = {
+        emotional: Math.min(100, Math.max(0, parseInt(urlParams.get('emotional') || '0'))),
+        communication: Math.min(100, Math.max(0, parseInt(urlParams.get('communication') || '0'))),
+        boundary: Math.min(100, Math.max(0, parseInt(urlParams.get('boundary') || '0'))),
+        conflict: Math.min(100, Math.max(0, parseInt(urlParams.get('conflict') || '0'))),
+        security: Math.min(100, Math.max(0, parseInt(urlParams.get('security') || '0'))),
+        growth: Math.min(100, Math.max(0, parseInt(urlParams.get('growth') || '0')))
+      };
+
+      console.log('🧪 测试模式激活:', dimensionScores);
+      
+      // 计算总分
+      const totalScore = Math.round(
+        (dimensionScores.emotional + 
+         dimensionScores.communication + 
+         dimensionScores.boundary + 
+         dimensionScores.conflict + 
+         dimensionScores.security + 
+         dimensionScores.growth) / 6
+      );
+
+      // 确定等级
+      let level: TestResult['level'];
+      let levelDescription: string;
+
+      if (totalScore >= 90) {
+        level = 'excellent';
+        levelDescription = '非常健康的原生家庭';
+      } else if (totalScore >= 75) {
+        level = 'good';
+        levelDescription = '健康的原生家庭';
+      } else if (totalScore >= 60) {
+        level = 'fair';
+        levelDescription = '基本健康，有改善空间';
+      } else if (totalScore >= 45) {
+        level = 'concerning';
+        levelDescription = '存在一些问题，需要关注';
+      } else if (totalScore >= 30) {
+        level = 'problematic';
+        levelDescription = '问题较多，建议寻求帮助';
+      } else {
+        level = 'severe';
+        levelDescription = '严重问题，强烈建议专业咨询';
+      }
+
+      const result: TestResult = {
+        totalScore,
+        dimensionScores,
+        level,
+        levelDescription
+      };
+
+      setTestResult(result);
       setScreen('result');
       setIsActivated(true);
       setIsValidating(false);
-      
-      // 生成模拟答案数据
-      const mockAnswers = generateMockAnswers(testType);
-      setAnswers(mockAnswers);
       return;
     }
 
     // 正常模式：验证激活码
     validateActivation();
-  }, []);
-
-  // 生成模拟答案数据
-  const generateMockAnswers = (type: PersonalityType): Answers => {
-    const traits = type.split('');
-    const answers: Answers = {
-      E: 0, I: 0, N: 0, S: 0, T: 0, F: 0, J: 0, P: 0
-    };
-
-    // 为每个维度生成合理的分数（总和为15）
-    answers[traits[0] as 'E' | 'I'] = Math.floor(Math.random() * 5) + 8; // 8-12
-    answers[traits[0] === 'E' ? 'I' : 'E'] = 15 - answers[traits[0] as 'E' | 'I'];
-
-    answers[traits[1] as 'N' | 'S'] = Math.floor(Math.random() * 5) + 8;
-    answers[traits[1] === 'N' ? 'S' : 'N'] = 15 - answers[traits[1] as 'N' | 'S'];
-
-    answers[traits[2] as 'T' | 'F'] = Math.floor(Math.random() * 5) + 8;
-    answers[traits[2] === 'T' ? 'F' : 'T'] = 15 - answers[traits[2] as 'T' | 'F'];
-
-    answers[traits[3] as 'J' | 'P'] = Math.floor(Math.random() * 5) + 8;
-    answers[traits[3] === 'J' ? 'P' : 'J'] = 15 - answers[traits[3] as 'J' | 'P'];
-
-    return answers;
   };
 
   const validateActivation = async () => {
@@ -142,186 +170,84 @@ function App() {
     setScreen('question');
   };
 
-  const handleAnswer = (trait: Trait) => {
-    const newAnswers = { ...answers, [trait]: answers[trait] + 1 };
+  const handleAnswer = (dimension: Dimension, score: number) => {
+    const newAnswers = { ...answers, [dimension]: answers[dimension] + score };
     setAnswers(newAnswers);
 
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      const type = calculatePersonalityType(newAnswers);
-      setPersonalityType(type);
-      // 直接显示结果，跳过付费页面
+      // 计算最终结果
+      const result = calculateTestResult(newAnswers);
+      setTestResult(result);
       setScreen('result');
-      // setShowPaymentModal(true); // 暂时隐藏付费功能
     }
   };
 
-  const handleSelectPlan = (plan: 'basic' | 'professional' | 'premium') => {
-    const prices = {
-      basic: '0.1',
-      professional: '19.9',
-      premium: '199'
-    };
-    setSelectedPlan({ plan, price: prices[plan] });
-    setShowMethodModal(true);
-  };
-
-  const handleSelectMethod = (method: 'wechat' | 'alipay') => {
-    if (!selectedPlan) return;
-    
-    // TODO: 在这里接入支付API
-    // 根据 method 和 selectedPlan 调用相应的支付接口
-    console.log('Payment method:', method);
-    console.log('Plan:', selectedPlan.plan);
-    console.log('Price:', selectedPlan.price);
-    
-    // 示例：调用支付接口
-    initiatePayment(method, selectedPlan.plan, selectedPlan.price);
-  };
-
-  const initiatePayment = async (method: 'wechat' | 'alipay', plan: string, price: string) => {
-    // ============================================
-    // 在这里配置您的收款账号信息
-    // ============================================
-    
-    const paymentConfig = {
-      // 微信支付配置
-      wechat: {
-        merchantId: 'YOUR_WECHAT_MERCHANT_ID',  // 您的微信商户号
-        appId: 'YOUR_WECHAT_APP_ID',            // 您的微信AppID
-        apiKey: 'YOUR_WECHAT_API_KEY',          // 您的微信API密钥
-      },
-      // 支付宝配置
-      alipay: {
-        appId: 'YOUR_ALIPAY_APP_ID',            // 您的支付宝AppID
-        privateKey: 'YOUR_ALIPAY_PRIVATE_KEY',  // 您的支付宝私钥
-        publicKey: 'YOUR_ALIPAY_PUBLIC_KEY',    // 支付宝公钥
-      }
+  const calculateTestResult = (ans: Answers): TestResult => {
+    // 每个维度最高分：10题 × 5分 = 50分
+    // 转换为0-100分制
+    const dimensionScores: Answers = {
+      emotional: Math.round((ans.emotional / 50) * 100),
+      communication: Math.round((ans.communication / 50) * 100),
+      boundary: Math.round((ans.boundary / 50) * 100),
+      conflict: Math.round((ans.conflict / 50) * 100),
+      security: Math.round((ans.security / 50) * 100),
+      growth: Math.round((ans.growth / 50) * 100)
     };
 
-    // 构建订单信息
-    const orderInfo = {
-      orderId: `ORDER_${Date.now()}`,
-      plan: plan,
-      amount: price,
-      timestamp: new Date().toISOString(),
-      description: `MBTI性格测试 - ${plan}版`
-    };
+    // 计算总分（6个维度的平均分）
+    const totalScore = Math.round(
+      (dimensionScores.emotional + 
+       dimensionScores.communication + 
+       dimensionScores.boundary + 
+       dimensionScores.conflict + 
+       dimensionScores.security + 
+       dimensionScores.growth) / 6
+    );
 
-    console.log('Payment Config:', paymentConfig[method]);
-    console.log('Order Info:', orderInfo);
+    // 确定等级
+    let level: TestResult['level'];
+    let levelDescription: string;
 
-    try {
-      // TODO: 调用实际的支付API
-      // 示例代码（需要根据实际支付SDK调整）:
-      /*
-      let paymentResult;
-      
-      if (method === 'wechat') {
-        // 微信支付
-        paymentResult = await WeChatPay.createOrder({
-          merchantId: paymentConfig.wechat.merchantId,
-          appId: paymentConfig.wechat.appId,
-          orderId: orderInfo.orderId,
-          amount: orderInfo.amount,
-          description: orderInfo.description,
-          notifyUrl: 'https://your-domain.com/api/payment/notify',
-          returnUrl: 'https://your-domain.com/payment/success'
-        });
-        
-        // 显示支付二维码或跳转支付页面
-        // 等待支付结果回调
-        const paymentStatus = await checkPaymentStatus(orderInfo.orderId);
-        
-        if (paymentStatus === 'success') {
-          handlePaymentSuccess();
-        } else {
-          handlePaymentFailure('支付失败，请重试');
-        }
-        
-      } else {
-        // 支付宝支付
-        paymentResult = await Alipay.createOrder({
-          appId: paymentConfig.alipay.appId,
-          orderId: orderInfo.orderId,
-          amount: orderInfo.amount,
-          subject: orderInfo.description,
-          notifyUrl: 'https://your-domain.com/api/payment/notify',
-          returnUrl: 'https://your-domain.com/payment/success'
-        });
-        
-        // 跳转到支付页面
-        // 等待支付结果回调
-        const paymentStatus = await checkPaymentStatus(orderInfo.orderId);
-        
-        if (paymentStatus === 'success') {
-          handlePaymentSuccess();
-        } else {
-          handlePaymentFailure('支付失败，请重试');
-        }
-      }
-      */
-
-      // ============================================
-      // 临时：模拟支付流程（开发测试用）
-      // 实际使用时请删除此部分，使用上面的真实支付API
-      // ============================================
-      const userConfirm = window.confirm(
-        `支付方式: ${method === 'wechat' ? '微信支付' : '支付宝'}\n套餐: ${plan}\n金额: ¥${price}\n\n点击"确定"模拟支付成功\n点击"取消"模拟支付失败\n\n请在 src/App.tsx 的 initiatePayment 函数中配置您的收款账号`
-      );
-
-      if (userConfirm) {
-        // 模拟支付成功
-        handlePaymentSuccess();
-      } else {
-        // 模拟支付失败
-        handlePaymentFailure('支付已取消');
-      }
-
-    } catch (error) {
-      console.error('Payment error:', error);
-      handlePaymentFailure('支付过程中出现错误，请重试');
+    if (totalScore >= 90) {
+      level = 'excellent';
+      levelDescription = '非常健康的原生家庭';
+    } else if (totalScore >= 75) {
+      level = 'good';
+      levelDescription = '健康的原生家庭';
+    } else if (totalScore >= 60) {
+      level = 'fair';
+      levelDescription = '基本健康，有改善空间';
+    } else if (totalScore >= 45) {
+      level = 'concerning';
+      levelDescription = '存在一些问题，需要关注';
+    } else if (totalScore >= 30) {
+      level = 'problematic';
+      levelDescription = '问题较多，建议寻求帮助';
+    } else {
+      level = 'severe';
+      levelDescription = '严重问题，强烈建议专业咨询';
     }
+
+    return {
+      totalScore,
+      dimensionScores,
+      level,
+      levelDescription
+    };
   };
 
-  const handlePaymentSuccess = () => {
-    // 支付成功，关闭所有弹窗，跳转到结果页面
-    setShowMethodModal(false);
-    setShowPaymentModal(false);
-    setScreen('result');
-  };
-
-  const handlePaymentFailure = (errorMessage: string) => {
-    // 支付失败，保持在支付弹窗，显示错误信息
-    alert(errorMessage);
-    // 不关闭任何弹窗，让用户可以重新尝试
-  };
-
-  const handleCloseMethodModal = () => {
-    setShowMethodModal(false);
-    // 不关闭套餐选择弹窗，让用户可以重新选择
-  };
-
-  const calculatePersonalityType = (ans: Answers): PersonalityType => {
-    let type = '';
-    type += ans.E > ans.I ? 'E' : 'I';
-    type += ans.N > ans.S ? 'N' : 'S';
-    type += ans.T > ans.F ? 'T' : 'F';
-    type += ans.J > ans.P ? 'J' : 'P';
-    return type as PersonalityType;
-  };
-
-  // Dynamic color themes for each question - Red to Purple spectrum
+  // Dynamic color themes for each question - Sky Blue spectrum
   const colorThemes = [
-    'linear-gradient(135deg, #FFD93D 0%, #FF6B9D 50%, #C8A2FF 100%)', // Yellow → Pink → Purple
-    'linear-gradient(135deg, #FF6B9D 0%, #FF8BA7 50%, #FFB6C1 100%)', // Pink → Light Pink → Pastel Pink
-    'linear-gradient(135deg, #C8A2FF 0%, #B47AEA 50%, #9D5BD2 100%)', // Light Purple → Medium Purple → Deep Purple
-    'linear-gradient(135deg, #FF4757 0%, #FF6B9D 50%, #C8A2FF 100%)', // Red → Pink → Purple
-    'linear-gradient(135deg, #FFD93D 0%, #FFA07A 50%, #FF6B9D 100%)', // Yellow → Coral → Pink
-    'linear-gradient(135deg, #FF8BA7 0%, #C8A2FF 50%, #9D5BD2 100%)', // Light Pink → Purple → Deep Purple
-    'linear-gradient(135deg, #FF6B9D 0%, #E056FD 50%, #C8A2FF 100%)', // Pink → Magenta → Purple
-    'linear-gradient(135deg, #FFA07A 0%, #FF6B9D 50%, #B47AEA 100%)', // Coral → Pink → Purple
+    'linear-gradient(135deg, #E3F2FD 0%, #90CAF9 50%, #42A5F5 100%)', // Light Blue → Sky Blue → Blue
+    'linear-gradient(135deg, #B3E5FC 0%, #4FC3F7 50%, #29B6F6 100%)', // Cyan Light → Cyan → Cyan Dark
+    'linear-gradient(135deg, #E1F5FE 0%, #81D4FA 50%, #4FC3F7 100%)', // Pale Blue → Light Cyan → Cyan
+    'linear-gradient(135deg, #E3F2FD 0%, #64B5F6 50%, #2196F3 100%)', // Light Blue → Blue → Blue Dark
+    'linear-gradient(135deg, #BBDEFB 0%, #42A5F5 50%, #1E88E5 100%)', // Sky Blue → Blue → Deep Blue
+    'linear-gradient(135deg, #E1F5FE 0%, #4FC3F7 50%, #03A9F4 100%)', // Pale Blue → Cyan → Bright Blue
+    'linear-gradient(135deg, #E3F2FD 0%, #90CAF9 50%, #64B5F6 100%)', // Light Blue → Sky Blue → Medium Blue
+    'linear-gradient(135deg, #B3E5FC 0%, #81D4FA 50%, #4FC3F7 100%)', // Cyan Light → Light Cyan → Cyan
   ];
 
   const getBackgroundStyle = () => {
@@ -360,7 +286,6 @@ function App() {
   // 激活成功，显示正常应用
   return (
     <div className="app" style={getBackgroundStyle()}>
-      {/* <LanguageSwitcher /> */}
       <div className="container">
         {screen === 'start' && <StartScreen onStart={handleStart} />}
         {screen === 'question' && (
@@ -370,23 +295,14 @@ function App() {
             onAnswer={handleAnswer}
           />
         )}
-        {screen === 'result' && (
-          <ResultScreen
-            personalityType={personalityType}
-            answers={answers}
+        {screen === 'result' && testResult && (
+          <FamilyResultScreen
+            result={testResult}
+            answers={testResult.dimensionScores}
           />
         )}
         <div className="card-watermark">@潜学天下</div>
       </div>
-      {showPaymentModal && <PaymentModal onSelectPlan={handleSelectPlan} />}
-      {showMethodModal && selectedPlan && (
-        <PaymentMethodModal
-          plan={selectedPlan.plan}
-          price={selectedPlan.price}
-          onSelectMethod={handleSelectMethod}
-          onClose={handleCloseMethodModal}
-        />
-      )}
     </div>
   );
 }

@@ -5,13 +5,13 @@
 }
 
 body {
-  font-family: 'ZCOOL KuaiLe', 'Zhi Mang Xing', 'Long Cang', 'Ma Shan Zheng', 'Varela Round', 'Quicksand', 'Comfortaa', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .app {
-  background: linear-gradient(135deg, #FFD93D 0%, #FF6B9D 50%, #C8A2FF 100%);
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 30%, #90CAF9 60%, #64B5F6 100%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -25,26 +25,27 @@ body {
   text-align: center;
   margin-top: 30px;
   padding-top: 20px;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid #E3F2FD;
   font-size: 14px;
   font-weight: 600;
-  background: linear-gradient(135deg, #FF6B9D 0%, #C8A2FF 100%);
+  background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .container {
   max-width: 700px;
   width: 100%;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 25px;
   padding: 40px;
-  box-shadow: 0 20px 60px rgba(255, 107, 157, 0.3);
+  box-shadow: 0 20px 60px rgba(33, 150, 243, 0.2);
   animation: fadeIn 0.5s;
   position: relative;
   z-index: 2;
+  backdrop-filter: blur(10px);
 }
 
 @keyframes fadeIn {

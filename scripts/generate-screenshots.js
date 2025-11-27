@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * MBTI截图生成脚本
+ * 原生家庭健康度测试截图生成脚本
  * 
  * 功能：
  * 1. 启动开发服务器
- * 2. 为所有16种MBTI类型生成结果页截图
+ * 2. 生成20个随机分数的测试报告截图
  * 3. 保存到screenshots文件夹
  * 
  * 使用方法：
  * npm run screenshot
+ * 
+ * 安全限制：
+ * - 只能在localhost环境运行
+ * - 生产环境无法使用测试模式
  */
 
 import puppeteer from 'puppeteer';
@@ -20,29 +24,48 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 所有16种MBTI类型
-const mbtiTypes = [
-  'INTJ', 'INTP', 'ENTJ', 'ENTP',
-  'INFJ', 'INFP', 'ENFJ', 'ENFP',
-  'ISTJ', 'ISTP', 'ESTJ', 'ESTP',
-  'ISFJ', 'ISFP', 'ESFJ', 'ESFP'
-];
-
-// 生成随机MBTI类型
-function getRandomType() {
-  return mbtiTypes[Math.floor(Math.random() * mbtiTypes.length)];
+// 生成随机的6个维度分数（0-100）
+function generateRandomScores() {
+  return {
+    emotional: Math.floor(Math.random() * 101),
+    communication: Math.floor(Math.random() * 101),
+    boundary: Math.floor(Math.random() * 101),
+    conflict: Math.floor(Math.random() * 101),
+    security: Math.floor(Math.random() * 101),
+    growth: Math.floor(Math.random() * 101)
+  };
 }
 
-// 生成20个随机类型（可能重复）
-function generateRandomTypes(count = 20) {
-  const types = [];
+// 计算总分
+function calculateTotalScore(scores) {
+  const sum = Object.values(scores).reduce((a, b) => a + b, 0);
+  return Math.round(sum / 6);
+}
+
+// 获取等级描述
+function getLevelDescription(totalScore) {
+  if (totalScore >= 90) return '非常健康';
+  if (totalScore >= 75) return '健康';
+  if (totalScore >= 60) return '基本健康';
+  if (totalScore >= 45) return '存在问题';
+  if (totalScore >= 30) return '问题较多';
+  return '严重问题';
+}
+
+// 生成20组随机测试数据
+function generateTestData(count = 20) {
+  const testData = [];
   for (let i = 0; i < count; i++) {
-    types.push({
-      type: getRandomType(),
-      index: i + 1
+    const scores = generateRandomScores();
+    const totalScore = calculateTotalScore(scores);
+    testData.push({
+      index: i + 1,
+      scores,
+      totalScore,
+      level: getLevelDescription(totalScore)
     });
   }
-  return types;
+  return testData;
 }
 
 // 创建screenshots文件夹
@@ -53,7 +76,7 @@ if (!fs.existsSync(screenshotsDir)) {
 
 async function generateScreenshots() {
   console.log('🚀 启动截图生成器...\n');
-  console.log('📊 将生成20张随机MBTI类型的截图\n');
+  console.log('📊 将生成20张随机分数的测试报告截图\n');
   
   const browser = await puppeteer.launch({
     headless: 'false',
@@ -67,24 +90,37 @@ async function generateScreenshots() {
     protocolTimeout: 60000
   });
 
-  // 生成20个随机类型
-  const randomTypes = generateRandomTypes(20);
+  // 生成20组测试数据
+  const testData = generateTestData(20);
   
-  // 统计每种类型的数量
-  const typeCount = {};
-  randomTypes.forEach(({ type }) => {
-    typeCount[type] = (typeCount[type] || 0) + 1;
+  // 统计分数分布
+  const scoreRanges = {
+    '90-100': 0,
+    '75-89': 0,
+    '60-74': 0,
+    '45-59': 0,
+    '30-44': 0,
+    '0-29': 0
+  };
+  
+  testData.forEach(({ totalScore }) => {
+    if (totalScore >= 90) scoreRanges['90-100']++;
+    else if (totalScore >= 75) scoreRanges['75-89']++;
+    else if (totalScore >= 60) scoreRanges['60-74']++;
+    else if (totalScore >= 45) scoreRanges['45-59']++;
+    else if (totalScore >= 30) scoreRanges['30-44']++;
+    else scoreRanges['0-29']++;
   });
   
-  console.log('📋 随机生成的类型分布:');
-  Object.entries(typeCount).sort().forEach(([type, count]) => {
-    console.log(`   ${type}: ${count}张`);
+  console.log('📋 随机生成的分数分布:');
+  Object.entries(scoreRanges).forEach(([range, count]) => {
+    console.log(`   ${range}分: ${count}张`);
   });
   console.log('');
 
   try {
-    for (const { type, index } of randomTypes) {
-      console.log(`📸 [${index}/20] 正在生成 ${type} 的截图...`);
+    for (const data of testData) {
+      console.log(`📸 [${data.index}/20] 正在生成总分${data.totalScore}分的截图...`);
       
       let page;
       try {
@@ -97,32 +133,44 @@ async function generateScreenshots() {
           deviceScaleFactor: 2 // 高清截图
         });
 
-        // 访问结果页，添加测试模式参数和随机种子
-        const randomSeed = Math.random();
-        const url = `http://localhost:5173/?test=true&type=${type}&seed=${randomSeed}`;
+        // 构建URL参数
+        const params = new URLSearchParams({
+          test: 'true',
+          emotional: data.scores.emotional,
+          communication: data.scores.communication,
+          boundary: data.scores.boundary,
+          conflict: data.scores.conflict,
+          security: data.scores.security,
+          growth: data.scores.growth
+        });
+        
+        const url = `http://localhost:5173/?${params.toString()}`;
         await page.goto(url, {
           waitUntil: 'networkidle2',
           timeout: 30000
         });
 
         // 等待页面完全加载
-        await page.waitForSelector('.result-screen', { timeout: 10000 });
+        await page.waitForSelector('.family-result-screen', { timeout: 10000 });
         
         // 额外等待动画完成
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // 截图 - 使用序号命名
+        // 截图 - 使用序号和总分命名
         const timestamp = Date.now();
-        const screenshotPath = path.join(screenshotsDir, `${String(index).padStart(2, '0')}_${type}_${timestamp}.png`);
+        const screenshotPath = path.join(
+          screenshotsDir, 
+          `${String(data.index).padStart(2, '0')}_score${data.totalScore}_${timestamp}.png`
+        );
         await page.screenshot({
           path: screenshotPath,
           fullPage: true
         });
 
-        console.log(`✅ [${index}/20] ${type} 截图已保存`);
+        console.log(`✅ [${data.index}/20] 总分${data.totalScore}分 (${data.level}) 截图已保存`);
         
       } catch (error) {
-        console.error(`❌ [${index}/20] ${type} 截图失败:`, error.message);
+        console.error(`❌ [${data.index}/20] 截图失败:`, error.message);
       } finally {
         if (page) {
           await page.close().catch(() => {});
@@ -130,14 +178,14 @@ async function generateScreenshots() {
       }
       
       // 短暂延迟，避免过快
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     console.log('\n🎉 所有截图生成完成！');
     console.log(`📁 截图保存位置: ${screenshotsDir}`);
     console.log('\n📊 最终统计:');
-    Object.entries(typeCount).sort().forEach(([type, count]) => {
-      console.log(`   ${type}: ${count}张`);
+    Object.entries(scoreRanges).forEach(([range, count]) => {
+      console.log(`   ${range}分: ${count}张`);
     });
     
   } catch (error) {

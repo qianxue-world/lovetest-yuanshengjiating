@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# 原生家庭健康度测试
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一个帮助用户了解原生家庭影响的在线测试应用。
 
-Currently, two official plugins are available:
+## 功能特点
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 📊 6大评估维度
+- **情感支持** - 家庭成员之间的情感连接和支持程度
+- **沟通质量** - 家庭内部的沟通方式和效果
+- **边界感** - 个人空间和家庭界限的平衡
+- **冲突处理** - 家庭矛盾的解决方式
+- **安全感** - 心理和情感上的安全程度
+- **成长环境** - 个人发展和自我实现的支持度
 
-## React Compiler
+### 🎯 测试特色
+- 60道精心设计的问题
+- 六芒星雷达图可视化展示
+- 0-100分综合评分系统
+- 针对性的改善建议
+- 专业的心理学理论支持
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 📈 评分等级
+- **90-100分** - 非常健康的原生家庭
+- **75-89分** - 健康的原生家庭
+- **60-74分** - 基本健康，有改善空间
+- **45-59分** - 存在一些问题，需要关注
+- **30-44分** - 问题较多，建议寻求帮助
+- **0-29分** - 严重问题，强烈建议专业咨询
 
-## Expanding the ESLint configuration
+## 技术栈
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React 18
+- TypeScript
+- Vite
+- CSS3 (动画和渐变)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 开发
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# 安装依赖
+npm install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 预览生产版本
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 部署
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+项目支持多种部署方式：
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- Docker
+- Kubernetes
+- 静态网站托管
+
+详见相关文档：
+- [Docker部署](README-DOCKER.md)
+- [CI/CD配置](README-CICD.md)
+
+## 免责声明
+
+本测试仅供参考和自我了解使用，不能替代专业的心理咨询和治疗。如果您正在经历严重的心理困扰，请寻求专业心理健康服务。
+
+## 许可证
+
+MIT License
+
+---
+
+Made with ❤️ by @潜学天下

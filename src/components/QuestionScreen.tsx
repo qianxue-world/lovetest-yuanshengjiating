@@ -1,15 +1,12 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { questions } from '../data/questions';
-import { questionsZh } from '../data/questions.zh';
-import { questionsJa } from '../data/questions.ja';
-import { Trait } from '../types';
+import { familyQuestions } from '../data/familyQuestions';
+import { Dimension } from '../types';
 import './QuestionScreen.css';
 
 interface QuestionScreenProps {
   currentQuestion: number;
   totalQuestions: number;
-  onAnswer: (trait: Trait) => void;
+  onAnswer: (dimension: Dimension, score: number) => void;
 }
 
 export const QuestionScreen: React.FC<QuestionScreenProps> = ({
@@ -17,26 +14,11 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
   totalQuestions,
   onAnswer,
 }) => {
-  const { i18n } = useTranslation();
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
-  
-  // Select questions based on current language
-  const getQuestions = () => {
-    switch (i18n.language) {
-      case 'zh':
-        return questionsZh;
-      case 'ja':
-        return questionsJa;
-      default:
-        return questions; // English
-    }
-  };
-  
-  const currentQuestions = getQuestions();
-  const questionData = currentQuestions[currentQuestion];
+  const questionData = familyQuestions[currentQuestion];
   
   if (!questionData) {
-    return <div>Question not found</div>;
+    return <div>问题未找到</div>;
   }
 
   return (
@@ -56,7 +38,7 @@ export const QuestionScreen: React.FC<QuestionScreenProps> = ({
             <div
               key={index}
               className="option-btn"
-              onClick={() => onAnswer(option.trait)}
+              onClick={() => onAnswer(option.dimension, option.score)}
             >
               {option.text}
             </div>

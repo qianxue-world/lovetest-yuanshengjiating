@@ -5,29 +5,39 @@ export interface Question {
 
 export interface Option {
   text: string;
-  trait: Trait;
+  dimension: Dimension;
+  score: number; // 1-5分，代表该选项对该维度的贡献
 }
 
-export type Trait = 'E' | 'I' | 'N' | 'S' | 'T' | 'F' | 'J' | 'P';
+// 原生家庭健康度的6个维度
+export type Dimension = 
+  | 'emotional'    // 情感支持
+  | 'communication' // 沟通质量
+  | 'boundary'     // 边界感
+  | 'conflict'     // 冲突处理
+  | 'security'     // 安全感
+  | 'growth';      // 成长环境
 
-export type PersonalityType = 
-  | 'ESTJ' | 'ESTP' | 'ESFJ' | 'ESFP'
-  | 'ENTJ' | 'ENTP' | 'ENFJ' | 'ENFP'
-  | 'ISTJ' | 'ISTP' | 'ISFJ' | 'ISFP'
-  | 'INTJ' | 'INTP' | 'INFJ' | 'INFP';
-
-export interface PersonalityInfo {
+export interface DimensionInfo {
   name: string;
   description: string;
+  healthyTraits: string[];
+  unhealthyTraits: string[];
+  suggestions: string[];
 }
 
 export interface Answers {
-  E: number;
-  I: number;
-  N: number;
-  S: number;
-  T: number;
-  F: number;
-  J: number;
-  P: number;
+  emotional: number;
+  communication: number;
+  boundary: number;
+  conflict: number;
+  security: number;
+  growth: number;
+}
+
+export interface TestResult {
+  totalScore: number; // 0-100
+  dimensionScores: Answers; // 每个维度0-100
+  level: 'excellent' | 'good' | 'fair' | 'concerning' | 'problematic' | 'severe';
+  levelDescription: string;
 }
